@@ -29,8 +29,9 @@ def find_kth_smallest_O_nlogn(a_list, k):
 
 
 class time_algorithm(threading.Thread):
-    def __init__(self, values, timer, *args, **kwargs):
+    def __init__(self, values, timer, name, *args, **kwargs):
         super().__init__()
+        self.name = name
         self.timer = timer
         self.values = values
         self.times = list()
@@ -46,7 +47,7 @@ class time_algorithm(threading.Thread):
 
 k = 3
 
-x_axis = list(range(1000, 1000000, 10000))
+x_axis = list(range(1000, 500000, 10000))
 
 O_n_timer = timeit.Timer('find_kth_smallest_O_n(threads[0].a_list, k)',
                          'from __main__ import threads, k, find_kth_smallest_O_n')
@@ -54,38 +55,31 @@ O_n_timer = timeit.Timer('find_kth_smallest_O_n(threads[0].a_list, k)',
 O_nlogn_timer = timeit.Timer('find_kth_smallest_O_nlogn(threads[1].a_list, k)',
                              'from __main__ import threads, k, find_kth_smallest_O_nlogn')
 
-threads = [time_algorithm(x_axis, O_n_timer), time_algorithm(x_axis, O_nlogn_timer)]
-
-for i, t in enumerate(threads, start=1):
-    print(f'starting thread {i}')
-    t.start()
-
+threads = [time_algorithm(x_axis, O_n_timer, 'O(n)'), time_algorithm(x_axis, O_nlogn_timer, 'O(nlog(n))')]
 fig, ax = plt.subplots()
-
-while True:
-    print(u'\u001b[2A\u001b[1000D', end='')
-    
-    at_least_1_alive = False
-
-    for i, t in enumerate(threads, start=1):
+num_threads = len(threads)
+len_x_axis = len(x_axis)
+for i, t in enumerate(threads, start=1):
+    print(f'Starting thread {i} of {num_threads}: {t.name}\n')
+    t.start()
+    while True:
+        print(u'\u001b[A\u001b[1000D', end='')
+        
         if t.progress == len(x_axis):
-            print(f'Thread {i} complete     ', ' '*len(str(t.progress)),
-                   '    ', ' '*len(str(len(x_axis))), '[', '='*101, ']\n',
+            print(f'Thread {i} complete      ', ' '*len(str(t.progress)),
+                   '    ', ' '*len(str(len_x_axis)), '[', '='*101, ']\n',
                    sep='', end='')
         else:
-            bars = int((t.progress / len(x_axis))*100) - 1
+            bars = int((t.progress / len_x_axis)*100) - 1
             spaces = 100 - bars
             print(f'Thread {i} running test {t.progress} of {len(x_axis)} [',
                    '='*bars, '>', ' '*spaces, ']\n', sep='', end='')
         
-        if i == len(threads):
-            time.sleep(0.5)
+      
+        t.join(timeout=0.5)
         
-        if t.is_alive():
-            at_least_1_alive = True
-    
-    if not at_least_1_alive:
-        break
+        if not t.is_alive():
+            break
 
 print('plotting data...')
 ax.plot(x_axis, threads[0].times)
