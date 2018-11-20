@@ -1,7 +1,5 @@
-import random, sys, copy, time, timeit, matplotlib, os
+import random, sys, copy, time, timeit, matplotlib, os, threading
 import matplotlib.pyplot as plt
-import threading
-
 
 
 def find_smallest(a_list):
@@ -47,7 +45,7 @@ class time_algorithm(threading.Thread):
 
 k = 3
 
-x_axis = list(range(1000, 500000, 10000))
+x_axis = list(range(1000, 1000000, 10000))
 
 O_n_timer = timeit.Timer('find_kth_smallest_O_n(threads[0].a_list, k)',
                          'from __main__ import threads, k, find_kth_smallest_O_n')
@@ -55,19 +53,21 @@ O_n_timer = timeit.Timer('find_kth_smallest_O_n(threads[0].a_list, k)',
 O_nlogn_timer = timeit.Timer('find_kth_smallest_O_nlogn(threads[1].a_list, k)',
                              'from __main__ import threads, k, find_kth_smallest_O_nlogn')
 
-threads = [time_algorithm(x_axis, O_n_timer, 'O(n)'), time_algorithm(x_axis, O_nlogn_timer, 'O(nlog(n))')]
-fig, ax = plt.subplots()
+threads = [time_algorithm(x_axis, O_n_timer, 'O(n)'),
+           time_algorithm(x_axis, O_nlogn_timer, 'O(nlog(n))')]
+
 num_threads = len(threads)
 len_x_axis = len(x_axis)
+len_str_len_x_axis = len(str(len_x_axis)
 for i, t in enumerate(threads, start=1):
     print(f'Starting thread {i} of {num_threads}: {t.name}\n')
     t.start()
     while True:
         print(u'\u001b[A\u001b[1000D', end='')
         
-        if t.progress == len(x_axis):
+        if t.progress == len_x_axis:
             print(f'Thread {i} complete      ', ' '*len(str(t.progress)),
-                   '    ', ' '*len(str(len_x_axis)), '[', '='*101, ']\n',
+                   '    ', ' '*len_str_len_x_axis, '[', '='*101, ']\n',
                    sep='', end='')
         else:
             bars = int((t.progress / len_x_axis)*100) - 1
@@ -82,6 +82,12 @@ for i, t in enumerate(threads, start=1):
             break
 
 print('plotting data...')
-ax.plot(x_axis, threads[0].times)
-ax.plot(x_axis, threads[1].times)
+fig, ax = plt.subplots()
+ax.set_xlabel('n (list size)')
+ax.set_ylabel('execution time (seconds)')
+ax.set_title('kth smallest item in a list')
+ax.plot(x_axis, threads[0].times, 'r')
+ax.plot(x_axis, threads[1].times, 'b')
+ax.legend([threads[0].name, threads[1].name])
+# fig.savefig('kth_smallest_fig.png')
 plt.show()
